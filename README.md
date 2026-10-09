@@ -2,7 +2,7 @@
 
 9/10/2026
 
-Today I'm going to make a compilation for writing yara rules in order to improve writing the rule itself and doing static analysis on malware samples. By the way, samples are going to be taken from MalwareBazaar platform. Since I'm writing yara rules I will mostly do static analysis, but when it is needed I might do dynamic analysis also. I will try to write yara rules for both linux and windows binaries.
+Hello, by MedicWiesel. Today I'm going to make a compilation for writing yara rules in order to improve writing the rule itself and doing static analysis on malware samples. By the way, samples are going to be taken from MalwareBazaar platform. Since I'm writing yara rules I will mostly do static analysis, but when it is needed I might do dynamic analysis also. I will try to write yara rules for both linux and windows binaries.
 My goal is to write 15 yara rules.
 
 ## 1st rule
@@ -49,3 +49,143 @@ I also checked wide strings and there are some interesting findings.
 And I think I finished writing rules for this file. I tested it and it works. Though there will be multiple false positives is my guess.
 
 [Final Rule](./rules/droppedbyamadey.yar "Yara Rule")
+
+## 2nd rule
+
+[Malware Sample](https://bazaar.abuse.ch/sample/2ec2a1c2cc31a1e5b6cdd9b2f1d6f09804bc042242c432fb0536cb708f49a231/)
+
+This is a rar file. It is my first time I'm encountering with this kind of malware. There is a CVE tag attached to it in MalwareBazaar. I will make a research on it quickly. 
+
+[CVE-2025-8088](https://nvd.nist.gov/vuln/detail/cve-2025-8088)
+
+Yeap, it is a WinRAR exploit that uses path traversal flaw. I will look at it myself.
+
+So in strings I found interestings things.
+![Word file](images/Screenshot_20261009_142143.png)
+
+![Startup folder](images/Screenshot_20261009_142247.png)
+This string above is problematic thing I guess. When shortened it is 
+AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup and file name.
+Unfortunately there is not much material I can work on. I also tried to get wide strings but there wasn't any. 
+So in principle this exploit works like this:
+> Attacker crafts a rar file which uses a vulnerability in WinRAR and can put unwanted files to folders like Temp or Startup. Which automatically might trigger when victim restarts their machine next time. And the malware inside just creates a connection to C2 server automatically.
+
+So I will write a yara rule that looks for this kind of autostart folders and scans only .rar files.
+
+![Contents of Rar](images/Screenshot_20261009_144251.png)
+
+I took the docx file inside this rar file and inside there was likely a cipher text. The context consisted of combination of 10 letters.
+
+![Cipher](images/Screenshot_20261009_143953.png)
+
+
+Anyway this was easy rule since there wasn't much to work on. Only path traversal and possible startup folder and a executable file extension will detect this kind of archive file easily.
+
+[Final Rule](rules/cve-2025-8088.yar "RARLAB WinRAR path traversal exploit")
+
+## 3rd rule
+
+[Malware Sample](https://bazaar.abuse.ch/sample/b69cdbaf327bf600f6e0ccd230367d28ab5be6977d35d51f78ad7229d75fb7f6/ "WannaCry")
+
+Again different file format. This file is a Dynamic Link Library. 
+
+![file command](images/Screenshot_20261009_154846.png)
+
+Lets take strings of it again. This is implementation of WannaCry ransomware. What supports my claim?
+These:
+
+![Domain](images/Screenshot_20261009_161802.png)
+![WannaCry strings](images/Screenshot_20261009_161934.png)
+![Readable symbols](images/Screenshot_20261009_162039.png)
+![D4 combinations](images/Screenshot_20261009_162205.png)
+![WannaCry Specifics](images/Screenshot_20261009_162357.png)
+![Extension](/home/jesus/Projects/yararuleSR/images/Screenshot_20261009_162543.png)
+
+I have once written WannaCry rule so I will modify it. 
+
+[My original rule](rules/WannaCryOriginal.yar)
+
+Interesting thing is this .dll file also had multiple files embed into it. 
+
+![DOS alert in the middle of file](images/Screenshot_20261009_172012.png)
+
+I also looked at wide strings.
+
+![IPs with IPC](images/Screenshot_20261009_174349.png)
+
+And here we go. 
+I finished writing the rule.
+[Final Rule](rules/WannaCryModified.yar)
+
+## 4th rule
+
+[Malware Sample](https://bazaar.abuse.ch/sample/82b123782487af3a71494100a6338c47484d6c87e8531f6b9a801ad586cdf2df)
+
+This malware has Mirai tag. Since I don't have much understanding of this malware family, I will research.
+
+Okay, so this is a botnet malware and one of the old ones. I also found its source code being leaked and currently shared on github.
+[Github Link](https://github.com/jgamblin/Mirai-Source-Code)
+
+And this malware is mainly used when targeting IoT devices and can be compiled for different processors. It is linux only malware.
+
+![commands](images/Screenshot_20261009_180955.png)
+
+![strings](images/Screenshot_20261009_181128.png)
+
+![wide strings](images/Screenshot_20261009_181353.png)
+
+Writing yara rule for this specific binary is fairly easy. 
+There is mention of example.com. I guess it is used for checking internet connection.
+
+![example.com](images/Screenshot_20261009_181545.png)
+
+There is also this hex data
+![hex](images/Screenshot_20261009_181642.png)
+
+When translated to ascii it is this shell code
+
+![shellcode](images/Screenshot_20261009_181802.png)
+
+Which is used for killing every process that is running.
+
+![otherartifacts](images/Screenshot_20261009_191145.png)
+
+As we can see in the binary busybox has been used multiple times which is a project that gather Unix commands under one big binary.
+
+And finished writing. Main component would be the killer script that is obfuscated using hex, busybox command calls and some independent strings.
+
+[Final Rule](rules/Mirai.yar)
+
+
+## 5st rule
+
+[Malware Sample](https://bazaar.abuse.ch/sample/e55a67c005c7c70758cf680e8fbdabebeb0c9c0bc060d31082a57eafe05281ba)
+
+This sample has Remus Stealer tag. I will research it. Hmm, this is relatively new Info Stealer type. Apparently it is also sold as MaaS(Malware as a Service) in illicit communities.
+
+![commands](images/Screenshot_20261009_202814.png)
+
+This one is windows specific as you see.
+
+Finding possible things that I can use is really hard since this file is 4.3Mb in size.
+
+![strings](images/Screenshot_20261009_203430.png)
+
+![strings](images/Screenshot_20261009_204217.png)
+
+FrostElement is in file multiple times.
+
+![domains](images/Screenshot_20261009_204251.png)
+
+Digicert also is everywhere practically in file, but it is just a TLS/SSL certificate authority. So I don't think I can use it as a strong indicator.
+
+There is bunch of time standards like this
+![Time Standards](images/Screenshot_20261009_205924.png)
+I might use them in regex.
+
+Cape says this domains have been accessed by this PE file. I added them to yara rule.
+![Domains](images/Screenshot_20261009_221244.png)
+
+This one particular rule is not that strong since it doesn't have strings specific to only this family.
+
+[Final Rule](rules/RemusStealer.yar)
