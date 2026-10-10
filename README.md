@@ -189,3 +189,80 @@ Cape says this domains have been accessed by this PE file. I added them to yara 
 This one particular rule is not that strong since it doesn't have strings specific to only this family.
 
 [Final Rule](rules/RemusStealer.yar)
+
+## 6st rule
+
+[Malware Sample](https://bazaar.abuse.ch/sample/9ffc1046e33fe4b019fadef8f2f7f4dde4b2b986cd6692553aebba8953b5a10d/)
+
+This is tagged as python installer and drainer.
+
+![Standard procedure](images/Screenshot_20261010_114535.png)
+
+As we can see it is a PE file that starts with MZ magic bytes. It is 12Mb in size so I guess it might be another hard to analyze example. Let's see.
+
+![Import functions](images/Screenshot_20261010_115030.png)
+
+There is bunch of import functions that is suspicious. E.g GetCommandLineA, GetModuleHandleW,ReadFile,GetFullPathNameW, RemoveDirectoryW.
+
+Since it is tagged with pyinstaller I extracted contents of exe using [pyinstxtractor.py](https://github.com/extremecoders-re/pyinstxtractor).
+
+After extracting there was this files in front of me. 
+![Extracted folder](images/Screenshot_20261010_124016.png)
+
+Most are standard modules except wiupdate.pyc which is main code in the case of this executable. 
+I tried to decompilate it via pydcd and uncompyle6 but because of version conflicts I just used [PyLingual.io](https://pylingual.io).
+
+The code showed that this really is a malicious python file that is packed to exe with PyInstaller.
+
+[Decompiled File](srcfiles/worm.py)
+
+It basically is money stealer and a worm at the same time. 
+At start it checks if it is run in sandbox.
+
+![Sandbox Check](images/Screenshot_20261010_125044.png)
+
+This malware also copies itself to Temp, AppData folders and uses CurrentVersion/Run registry key for persistence.
+
+![Persistence](images/Screenshot_20261010_125437.png)
+
+Also it checks for internet connection.
+
+![Internet Check](images/Screenshot_20261010_131333.png)
+
+It uses in the code Fernet symmetric encryption.
+
+![Fernet](images/Screenshot_20261010_131538.png)
+
+![Fernet Usage](images/Screenshot_20261010_131633.png)
+
+It fetches a cryptowallet from internet using today's date as subdomain and multiple blog sites. It uses the fernet key to decrypt the text in the blog sites after the regex "#0bw0#(.+?)# 0bw0#".
+ 
+![Wallet Address Fetch](images/Screenshot_20261010_131806.png)
+
+
+and changes cryptowallet addresses in clipboard automatically the attackers own wallet that is fetched from the blog sites. 
+
+![Clipboard Inject](images/Screenshot_20261010_132754.png)
+
+It copies itself to usb drives to the autorun.inf file to automatically spread without additional effort using WMI calls.
+
+![f.write calls](images/Screenshot_20261010_184609.png) 
+
+
+And it also write a d.vbs file which automatically kills task manager with this message:
+> Task Manager has been disabled by your administrator
+
+Which I suppose is for not making victim suspicious, and laten the detection as much as possible.
+
+![tskmgr killer](images/Screenshot_20261010_183910.png)
+
+
+And now I have finished looking at the source code let's write a yara rule for the unpacked file that can exists in memory. And then I will switch to packed with pyinstaller part.
+
+And finished this one too.
+[Final Rule](rules/Drainer.yar)
+
+
+
+
+
