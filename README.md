@@ -6,26 +6,32 @@ Hello, by MedicWiesel. Today I'm going to make a compilation for writing yara ru
 My goal is to write 15 yara rules.
 
 ## 1st rule
+
 [Malware's Link](https://bazaar.abuse.ch/sample/7299d673b54d925035aaca820db13f3daa1e39e11cda36dbbfcc7bd26ffb6fc9/)
 
 ![file command](./images/Screenshot_20261009_112505.png)
 
 ![MZ](images/Screenshot_20261009_130750.png)
+
 In the page itself it is being said that this malware has been dropped by Amadey malware. Which makes me highly sure that it is also a malicious file. 
 
 ![strings command on upx packed PE](./images/Screenshot_20261009_112753.png)
+
 In this malware UPX packer has been used I will need to unpack it. This also means that when used directly on the file yara couldn't be able to detect it. Only if the yara is used on memory it can detect the unpacked version strings which I will try to write my rule on.
 
 I easily unpacked it using upx linux version. 
+
 ![unpacking](./images/Screenshot_20261009_112943.png)
 
 I ran file command on the unpacked binary again for checking if it is .NET binary or not. (If it would be .NET binary then my work with dynamic analysis would be easier and it would make my static analysis on binary more assured.)
+
 ![file command](./images/Screenshot_20261009_113106.png)
 
 It was not. So I continued basic static analysis.
 
 ### Strings
 This is all strings I found that can be used to write yara rule.
+
 ![Domain, Ip, Exe](./images/Screenshot_20261009_113554.png)
 ![Discord](./images/Screenshot_20261009_113923.png)
 
@@ -34,7 +40,6 @@ Also there was some .dll and .ps1 being used in the file.
 ![ps1](images/Screenshot_20261009_131355.png)
 
 ![dll1](images/Screenshot_20261009_131458.png)
-
 
 ![dll2](images/Screenshot_20261009_131552.png)
 
@@ -61,9 +66,11 @@ This is a rar file. It is my first time I'm encountering with this kind of malwa
 Yeap, it is a WinRAR exploit that uses path traversal flaw. I will look at it myself.
 
 So in strings I found interestings things.
+
 ![Word file](images/Screenshot_20261009_142143.png)
 
 ![Startup folder](images/Screenshot_20261009_142247.png)
+
 This string above is problematic thing I guess. When shortened it is 
 AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup and file name.
 Unfortunately there is not much material I can work on. I also tried to get wide strings but there wasn't any. 
@@ -115,6 +122,7 @@ I also looked at wide strings.
 
 And here we go. 
 I finished writing the rule.
+
 [Final Rule](rules/WannaCryModified.yar)
 
 ## 4th rule
@@ -124,6 +132,7 @@ I finished writing the rule.
 This malware has Mirai tag. Since I don't have much understanding of this malware family, I will research.
 
 Okay, so this is a botnet malware and one of the old ones. I also found its source code being leaked and currently shared on github.
+
 [Github Link](https://github.com/jgamblin/Mirai-Source-Code)
 
 And this malware is mainly used when targeting IoT devices and can be compiled for different processors. It is linux only malware.
@@ -179,11 +188,14 @@ FrostElement is in file multiple times.
 
 Digicert also is everywhere practically in file, but it is just a TLS/SSL certificate authority. So I don't think I can use it as a strong indicator.
 
-There is bunch of time standards like this
+There is bunch of time standards like this.
+
 ![Time Standards](images/Screenshot_20261009_205924.png)
+
 I might use them in regex.
 
 Cape says this domains have been accessed by this PE file. I added them to yara rule.
+
 ![Domains](images/Screenshot_20261009_221244.png)
 
 This one particular rule is not that strong since it doesn't have strings specific to only this family.
@@ -204,9 +216,12 @@ As we can see it is a PE file that starts with MZ magic bytes. It is 12Mb in siz
 
 There is bunch of import functions that is suspicious. E.g GetCommandLineA, GetModuleHandleW,ReadFile,GetFullPathNameW, RemoveDirectoryW.
 
-Since it is tagged with pyinstaller I extracted contents of exe using [pyinstxtractor.py](https://github.com/extremecoders-re/pyinstxtractor).
+Since it is tagged with pyinstaller I extracted contents of exe using.
+
+[pyinstxtractor.py](https://github.com/extremecoders-re/pyinstxtractor)
 
 After extracting there was this files in front of me. 
+
 ![Extracted folder](images/Screenshot_20261010_124016.png)
 
 Most are standard modules except wiupdate.pyc which is main code in the case of this executable. 
@@ -260,7 +275,61 @@ Which I suppose is for not making victim suspicious, and laten the detection as 
 And now I have finished looking at the source code let's write a yara rule for the unpacked file that can exists in memory. And then I will switch to packed with pyinstaller part.
 
 And finished this one too.
+
 [Final Rule](rules/Drainer.yar)
+
+## 7st rule
+
+Yet another elf binary that is packed with upx.
+
+[Malware Sample](https://bazaar.abuse.ch/sample/f8295be7f423041d8e271707975deb2972e8222b1eb8f5c2f81136f063417d97/)
+
+![Basic commands](images/Screenshot_20261011_121553.png)
+
+After depacking I extracted strings again. There was too many meaningless string words. But there are some usable command strings inside like this, too.
+
+![Strings in depacked binary](images/Screenshot_20261011_123606.png)
+
+Again I can see there is use of busybox in this binary also.
+
+![Busybox use](images/Screenshot_20261011_123902.png)
+
+In the above picture there is also 138.12.180.212 IP address which I suspect is C2.
+
+In this one there is more related to c2 server.
+
+![Internet check and c2](images/Screenshot_20261011_124045.png)
+
+Somehow malware writer hasn't even tried to hide all this artifacts about c2 and reverse shell. Maybe it was experimental.
+
+![Reverse shell](images/Screenshot_20261011_124212.png)
+
+There is also this architecture names.
+
+![Processor architecture related](images/Screenshot_20261011_124432.png)
+
+There was this domain, but I don't think it has any relation to c2 server. It either is there just for brute forcing into modem/router or just checking internet connection.
+
+![Domain](images/Screenshot_20261011_124646.png)
+
+![Binary's wordlist](images/Screenshot_20261011_135134.png)
+![Metasploit wordlist](images/Screenshot_20261011_135047.png)
+
+They look pretty similar to me. It might be that this uses metasploit wordlists to create a backdoor in routers.
+
+There is multiple common passwords like these in the binary strings. It suggests it tries to bruteforce its way into routers locally.
+
+![Wordlist](images/Screenshot_20261011_135427.png)
+
+![Regexes](images/Screenshot_20261011_140125.png)
+
+These regexes suggest that this really is a botnet malware. When it gains access to system it looks for login requests of pages that start with RT(routers) ANS/USR(application/user authentication servers) and TBOT/UTT/PBOC/whomp/gx(custom local daemon and bot servers).
+
+
+
+I think I finished analysis, now let's write the prototype rule.
+
+
 
 
 
