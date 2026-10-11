@@ -278,7 +278,7 @@ And finished this one too.
 
 [Final Rule](rules/Drainer.yar)
 
-## 7st rule
+## 7th rule
 
 Yet another elf binary that is packed with upx.
 
@@ -329,6 +329,7 @@ These regexes suggest that this really is a botnet malware. When it gains access
 
 I think I finished analysis, now let's write the prototype rule.
 
+After a bit of analysis I think this malware is derived from Mirai Botnet. It uses same busybox pattern and bruteforces login pages. It is a dropper though.
 
 
 

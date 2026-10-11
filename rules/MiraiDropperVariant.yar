@@ -62,9 +62,9 @@ rule Rival_killing{
         7 of ($rival*) and
         3 of ($c2serv*)
 }
-rule Mirai_variant{
+rule Mirai_Dropper_variant{
     meta:
-        description="Detects mirai derived botnet malware"
+        description="Detects mirai derived botnet malware/dropper"
         author="MedicWiesel"
         date="11-10-2026"
         reference="https://bazaar.abuse.ch/sample/f8295be7f423041d8e271707975deb2972e8222b1eb8f5c2f81136f063417d97/"
