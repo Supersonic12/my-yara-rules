@@ -330,9 +330,51 @@ These regexes suggest that this really is a botnet malware. When it gains access
 I think I finished analysis, now let's write the prototype rule.
 
 After a bit of analysis I think this malware is derived from Mirai Botnet. It uses same busybox pattern and bruteforces login pages. It is a dropper though.
+Also I checked the wide strings but there wasn't any.
+
+[Final Rule](rules/MiraiDropperVariant.yar)
+
+## 8th rule
+
+Found this sample with QuasarRAT tag.
+
+[Malware Sample](https://bazaar.abuse.ch/sample/0fdf8b638918ac7a04c36e6ea150548dcd245caa8674601c8a9d5905e77f9bc3/)
+
+![Basic Commands](images/Screenshot_20261011_153737.png)
+
+It is an exe file that doesn't seem like it is packed. Its size is 3.2Mb. 
+
+Normally quasarRAT has a version on github. But it is written using C# and .NET. And from the output of file I guess its CLR header is stripped. I tried to open it in ILSpy and it worked perfectly. 
+
+To be honest this rat is so well documented writing a yara rule isn't that hard.
 
 
+In this sample there was really not much seeable info in normal strings. But in wide strings there were 2 domains and 2 user agents notable,
 
+![Domain and agent](images/Screenshot_20261011_203906.png)
+![user agent](images/Screenshot_20261011_204020.png)
 
+There was literally at most place name of ProtoBuf, BouncyCastle and especially name of rat itself "Quasar".
 
+![ProtoBuf](images/Screenshot_20261011_204158.png)
+![Bouncy Castle](images/Screenshot_20261011_204302.png)
 
+There was name of developer of Quasar also.(MaxXor)
+
+![Quasar](images/Screenshot_20261011_204340.png)
+
+And as we can see the sample is the 1.4.1th version of QuasarRAT.
+
+There was registry keys for persistence. Mostly basic ones like Run/RunOnce
+
+![Registry Keys](images/Screenshot_20261011_204722.png)
+
+There was scheduled task writing, too.
+
+![Scheduled task with Regex](images/Screenshot_20261011_210422.png)
+
+Also it writes to a .bat file at some point
+
+![.bat file](images/Screenshot_20261011_210535.png)
+
+It writes things 2 times in bat time somehow. It also make a query which i guess is wmi query.
