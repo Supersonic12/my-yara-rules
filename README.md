@@ -378,3 +378,7 @@ Also it writes to a .bat file at some point
 ![.bat file](images/Screenshot_20261011_210535.png)
 
 It writes things 2 times in bat time somehow. It also make a query which i guess is wmi query.
+
+And finished this yara rule too. It was pretty hard, not worse than 5th rule, but it definitely was hard. 5th rule was hard because there was not much thing that I can work on. But this was hard because there was too many input to work on, almost none was worthy enough to use on the rule.
+
+[Final Rule](rules/QuasarRat.yar)
