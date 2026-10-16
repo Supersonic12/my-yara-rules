@@ -454,3 +454,40 @@ I don't think this file is actually malicious as virustotal or malware bazaar su
 
 Cause:*Non-Malicious*
 
+## 10th rule
+
+[Malware Sample](https://bazaar.abuse.ch/sample/8360a40c7eb801b653b9f2180c9b3dc49fb9c6ed139f98e2491aa031f69052a8/)
+
+Tags:
+> exe WARDENStealer
+
+![Basic Metadata](images/Screenshot_20261016_151830.png)
+![Entropy](images/Screenshot_20261016_152259.png) 
+
+Filesize is roughly 1MB. File has magic bytes at start. It is written with c/c++. Entropy isn't more than 6.5 which suggests there isn't any obfuscated string inside.
+There is not much of information in normal strings. In wide strings there is bunch of long strings, but I can't create meaningful detection using them. In wide strings there is one useful part:
+![Company Relation](images/Screenshot_20261016_152457.png)
+
+This can be used for searching it. There isn't any useful ip, url, powershell command inside the file. There is multiple file locations though. For ease of things I will show their name in the capesandbox.
+![File names](images/Screenshot_20261016_152645.png)
+
+![Mutexes](images/Screenshot_20261016_155221.png)
+
+![Internet Connections](images/Screenshot_20261016_155501.png)
+
+My guess is this is just a dropper. It checks for display version and others for detecting if it is on sandbox environment. 
+
+![Created RWX memory and opens explorer.exe](images/Screenshot_20261016_160543.png)
+
+![Writes to explorer.exe proc memory and creates remote thread](images/Screenshot_20261016_160721.png)
+
+It injects code to explorer.exe and this way explorer.exe makes connection to usefilebox.com. Which is cloud storage. It probably downloads something from there and executes it.
+
+![Created File](images/Screenshot_20261016_160456.png) 
+![Created Files](images/Screenshot_20261016_161403.png)
+
+And later explorer.exe continues to do the job. Malware stops after injecting code to explorer.exe. I think this is enough to write something.
+
+And like this, I have finished writing 10 yara rule.
+
+[Finalest Rules](rules/GacoabonDropper.yar)
