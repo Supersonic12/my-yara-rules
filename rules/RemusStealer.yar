@@ -28,9 +28,9 @@ rule RemusStealer_Variant{
         $domain3="cfcher.biz"
 
     condition:
-        uint16(0)==0x4D5A and filesize <= 10MB and
+        uint16(0)==0x5A4D and filesize <= 10MB and
         all of ($go_build_id,$peheader*) and
-        $frost
-        5 of ($comp*,$url*,$timestamping*) or
-        3 of ($domain*)
+        $frost and
+        (5 of ($comp*,$url*,$timestamping*) or
+        3 of ($domain*))
 }

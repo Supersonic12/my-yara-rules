@@ -83,12 +83,12 @@ rule Drainer_Variant_forMemory{
         $domainRex12=/\.weebly\.com/
         $domainRex13=/\.wordpress\.com/
         $domainRex14=/\.blogger\.com/
-        $mainDomain=/http:\/\/[a-z0-9]{8}\.[a-zA-Z0-9/]{,20}\.[a-z]{,4}/
+        $mainDomain=/http:\/\/[a-z0-9]{8}\.[a-zA-Z0-9\/]{,20}\.[a-z]{,4}/
     condition:
         // first milestone is mutex name and fernet key
         ($mutex or $fernetkey) and
         // second milestone is gathering wallet with domains
-        ((10 of ($domain*) or #mainDomain > 10) and ($rexstring) and
+        ((10 of ($domain*) or #mainDomain > 10) and ($rexstring)) and
         // vm,sandbox check and persistence
         3 of ($regkey*,$check*) and
         // other strings

@@ -2,7 +2,7 @@
 An Implementation of WannaCry
 Rule hasn't been tested on multiple files
 */
-rule WannaCry
+rule WannaCryBasic
 {
   meta:
       author= "MedicWiesel"
